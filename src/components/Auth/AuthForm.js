@@ -7,6 +7,7 @@ const AuthForm = () => {
   const passwordInputRef = useRef('');
 
   const [isLogin, setIsLogin] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const switchAuthModeHandler = () => {
     setIsLogin((prevState) => !prevState);
@@ -19,6 +20,8 @@ const AuthForm = () => {
     const enteredEmail = emailInputRef.current.value;
     const enteredPassword = passwordInputRef.current.value;
 
+
+    setIsLoading(true)
     // Optional: Add validation of user input to make sure the email is a valid email and password which is at least 7 characters long
     if(isLogin) {
 
@@ -36,13 +39,20 @@ const AuthForm = () => {
           'Content-type': 'application/json'
         },
       }).then((res) => {
+        setIsLoading(false)
         if(res.ok) {
           // ...
         } else {
           // throw some errors and give us extra information here
           return res.json().then(data => {
-            // show an error modal or anything like that
-            console.log(data)
+            // show an error modal or anything like that for example, but this is just a very simple demostration app 
+            let errorMessage = "Authentication failed!"
+
+            // This is alternative way you could do it
+            // if(data && data.error && data.error.message) {
+            //   errorMessage = data.error.message;
+            // }
+            alert(errorMessage)
           });
         }
       });
@@ -62,7 +72,8 @@ const AuthForm = () => {
           <input type='password' id='password' required ref={passwordInputRef} />
         </div>
         <div className={classes.actions}>
-          <button>{isLogin ? 'Login' : 'Create Account'}</button>
+          {!isLoading && <button>{isLogin ? 'Login' : 'Create Account'}</button>}
+          {isLoading &&  <p>Sending request...</p>}
           <button
             type='button'
             className={classes.toggle}
