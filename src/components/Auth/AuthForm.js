@@ -22,41 +22,53 @@ const AuthForm = () => {
 
 
     setIsLoading(true)
+
+    let url;
+
     // Optional: Add validation of user input to make sure the email is a valid email and password which is at least 7 characters long
     if(isLogin) {
-
+      url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDSpDt8AsbkNg4tozrlQgzGeGL2rPt2V8s'
     } else {
-      // More information how firebase works https://firebase.google.com/docs/reference/rest/auth#section-create-email-password
-      fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDSpDt8AsbkNg4tozrlQgzGeGL2rPt2V8s', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: enteredEmail,
-          password: enteredPassword,
-          returnSecureToken: true
-        }),
-        headers: {
-          // This is to let the Auth REST API knows that we are going to send some JSON data coming in here
-          'Content-type': 'application/json'
-        },
-      }).then((res) => {
-        setIsLoading(false)
-        if(res.ok) {
-          // ...
-        } else {
-          // throw some errors and give us extra information here
-          return res.json().then(data => {
-            // show an error modal or anything like that for example, but this is just a very simple demostration app 
-            let errorMessage = "Authentication failed!"
-
-            // This is alternative way you could do it
-            // if(data && data.error && data.error.message) {
-            //   errorMessage = data.error.message;
-            // }
-            alert(errorMessage)
-          });
-        }
-      });
+      url = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDSpDt8AsbkNg4tozrlQgzGeGL2rPt2V8s';
     }
+
+    // More information how firebase works https://firebase.google.com/docs/reference/rest/auth#section-create-email-password
+    fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: enteredEmail,
+        password: enteredPassword,
+        returnSecureToken: true
+      }),
+      headers: {
+        // This is to let the Auth REST API knows that we are going to send some JSON data coming in here
+        'Content-type': 'application/json'
+      },
+    }).then((res) => {
+      setIsLoading(false)
+      if (res.ok) {
+        return res.json()
+      } else {
+        // throw some errors and give us extra information here
+        return res.json().then(data => {
+          // show an error modal or anything like that for example, but this is just a very simple demostration app 
+          let errorMessage = "Authentication failed!"
+
+          // This is alternative way you could do it
+          // if(data && data.error && data.error.message) {
+          //   errorMessage = data.error.message;
+          // }
+          throw new Error(errorMessage)
+        })
+       
+      }
+    })
+      .then(data => {
+        console.log(data)
+      })
+      .catch(err => {
+        alert(err.message)
+      });;
   }
 
   return (
