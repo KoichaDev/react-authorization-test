@@ -62,7 +62,12 @@ const AuthForm = () => {
         }
       })
       .then((data) => {
-        authCtx.login(data.idToken);
+        // Converts it from seconds to milliseconds
+        // For more info: https://firebase.google.com/docs/reference/rest/auth#section-change-password
+        const firebaseTimeExpires = (+data.expiresIn * 1000);
+        // Creating a new date object from the firebase time stamps in milliseconds
+        const expirationTime = new Date((new Date().getTime() + firebaseTimeExpires));
+        authCtx.login(data.idToken, expirationTime.toISOString());
         // This will redirect the user to a different page. This means user can't use the back-button to go back previous page
         history.replace('/')
       })
