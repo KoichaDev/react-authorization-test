@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallbacks } from 'react';
+
+let logoutTimer; 
 
 const AuthContext = React.createContext({
     token: '',
@@ -19,24 +21,63 @@ const calculateRemainingTime = (expirationTime) => {
 }
 
 
+const retrieveStoredToken = () => {
+    const storedToken = localStorage.getItem('token')
+    const storedExpirationDate = localStorage.getItem('expirationTime')
+
+    const remainingTime = calculateRemainingTime(storedExpirationDate);
+
+    // This is to make sure that it doesn't make sense for the user to log the user in
+    if(remainingTime <= 60000) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('expirationTime');
+        return null;
+    }
+
+    return {
+        token: storedToken,
+        remainingTime: remainingTime
+    };
+}
+
+
 export const AuthContextProvider = (props) => {
-    const initialToken = localStorage.getItem('token')
+    const tokenData = retrieveStoredToken();
+    let initialToken; 
+    if(tokenData) {
+        initialToken = tokenData.token
+    }
+
     const [token, setToken] = useState(initialToken);
 
     const userIsLoggedIn = !!token;
 
-    const logoutHandler = () => {
+    const logoutHandler = useCallbacks(() => {
         setToken(null);
         localStorage.removeItem('token');
-    };
+        localStorage.removeItem('expirationTime');
+
+
+        if(logoutTimer) {
+            clearTimeout(logoutTimer)
+        }
+    }, []);
 
     const loginHandler = (token, expirationTime) => {
         setToken(token);
         localStorage.setItem('token', token);
+        localStorage.setItem('expirationTime', expirationTime)
 
         const remainingTime = calculateRemainingTime(expirationTime)
-        setTimeout(logoutHandler, remainingTime);
+        logoutTimer = setTimeout(logoutHandler, remainingTime);
     };
+
+    useEffect(() => {
+        if(tokenData) {
+            console.table(tokenData);
+            logoutTimer = setTimeout(logoutHandler, tokenData.remainingTime);
+        }
+    }, [tokenData, logoutHandler]);
 
     const contextValue = {
         token: token,
