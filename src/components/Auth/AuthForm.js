@@ -1,10 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useContext } from 'react';
 
+import AuthContext from '../../store/auth-context';
 import classes from './AuthForm.module.css';
 
 const AuthForm = () => {
-  const emailInputRef = useRef('');
-  const passwordInputRef = useRef('');
+  const emailInputRef = useRef();
+  const passwordInputRef = useRef();
+
+  const authCtx = useContext(AuthContext);
 
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -14,62 +17,55 @@ const AuthForm = () => {
   };
 
   const submitHandler = (event) => {
-    // Prevent browser default of a sending request automatically, since we want to send our own requests
     event.preventDefault();
-    console.log("submitted");
+
     const enteredEmail = emailInputRef.current.value;
     const enteredPassword = passwordInputRef.current.value;
 
+    // optional: Add validation
 
-    setIsLoading(true)
-
+    setIsLoading(true);
     let url;
-
-    // Optional: Add validation of user input to make sure the email is a valid email and password which is at least 7 characters long
-    if(isLogin) {
-      url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDSpDt8AsbkNg4tozrlQgzGeGL2rPt2V8s'
+    if (isLogin) {
+      url =
+        'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyDSpDt8AsbkNg4tozrlQgzGeGL2rPt2V8s';
     } else {
-      url = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDSpDt8AsbkNg4tozrlQgzGeGL2rPt2V8s';
+      url =
+        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyDSpDt8AsbkNg4tozrlQgzGeGL2rPt2V8s';
     }
-
-    // More information how firebase works https://firebase.google.com/docs/reference/rest/auth#section-create-email-password
     fetch(url, {
       method: 'POST',
       body: JSON.stringify({
         email: enteredEmail,
         password: enteredPassword,
-        returnSecureToken: true
+        returnSecureToken: true,
       }),
       headers: {
-        // This is to let the Auth REST API knows that we are going to send some JSON data coming in here
-        'Content-type': 'application/json'
+        'Content-Type': 'application/json',
       },
-    }).then((res) => {
-      setIsLoading(false)
-      if (res.ok) {
-        return res.json()
-      } else {
-        // throw some errors and give us extra information here
-        return res.json().then(data => {
-          // show an error modal or anything like that for example, but this is just a very simple demostration app 
-          let errorMessage = "Authentication failed!"
-
-          // This is alternative way you could do it
-          // if(data && data.error && data.error.message) {
-          //   errorMessage = data.error.message;
-          // }
-          throw new Error(errorMessage)
-        })
-       
-      }
     })
-      .then(data => {
-        console.log(data)
+      .then((res) => {
+        setIsLoading(false);
+        if (res.ok) {
+          return res.json();
+        } else {
+          return res.json().then((data) => {
+            let errorMessage = 'Authentication failed!';
+            // if (data && data.error && data.error.message) {
+            //   errorMessage = data.error.message;
+            // }
+
+            throw new Error(errorMessage);
+          });
+        }
       })
-      .catch(err => {
-        alert(err.message)
-      });;
-  }
+      .then((data) => {
+        authCtx.login(data.idToken);
+      })
+      .catch((err) => {
+        alert(err.message);
+      });
+  };
 
   return (
     <section className={classes.auth}>
@@ -81,11 +77,18 @@ const AuthForm = () => {
         </div>
         <div className={classes.control}>
           <label htmlFor='password'>Your Password</label>
-          <input type='password' id='password' required ref={passwordInputRef} />
+          <input
+            type='password'
+            id='password'
+            required
+            ref={passwordInputRef}
+          />
         </div>
         <div className={classes.actions}>
-          {!isLoading && <button>{isLogin ? 'Login' : 'Create Account'}</button>}
-          {isLoading &&  <p>Sending request...</p>}
+          {!isLoading && (
+            <button>{isLogin ? 'Login' : 'Create Account'}</button>
+          )}
+          {isLoading && <p>Sending request...</p>}
           <button
             type='button'
             className={classes.toggle}
